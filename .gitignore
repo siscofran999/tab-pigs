@@ -1,3 +1,16 @@
+# Konfigurasi Lokal & IDE
+*.iml
+.gradle/
+local.properties
+.idea/
+.DS_Store
+
+# Folder Hasil Build
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+
 # Compiled class file
 *.class
 
