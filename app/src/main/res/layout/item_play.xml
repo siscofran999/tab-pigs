@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:layout_marginTop="24dp"
     android:layout_marginHorizontal="10dp"
-    android:layout_marginBottom="80dp"
+    android:layout_marginBottom="60dp"
+    android:clipChildren="false"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <androidx.appcompat.widget.AppCompatImageView
@@ -11,5 +13,14 @@
         android:layout_width="100dp"
         android:layout_height="wrap_content"
         app:srcCompat="@drawable/img_mud" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/imgPig"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_alignBottom="@id/imgMud"
+        android:layout_marginBottom="15dp"
+        app:srcCompat="@drawable/pig" />
 
 </RelativeLayout>

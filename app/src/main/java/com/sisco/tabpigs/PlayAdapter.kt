@@ -36,9 +36,14 @@ class PlayAdapter(): ListAdapter<PlayModel, PlayAdapter.PlayViewHolder>(DIFF_UTI
     inner class PlayViewHolder(private val binding: ItemPlayBinding): RecyclerView.ViewHolder(binding.root) {
         fun bind(item: PlayModel?) {
             if (item?.isShowPig == true) {
-                binding.imgMud.setImageResource(R.drawable.img_pig_mud)
+                binding.imgPig.animate()
+                    .translationY(0f)
+                    .alpha(1f)
+                    .setDuration(200)
+                    .start()
             }else {
-                binding.imgMud.setImageResource(R.drawable.img_mud)
+                binding.imgPig.translationY = 150f
+                binding.imgPig.alpha = 0f
             }
             binding.root.setOnSingleClickListener {
                 if (item != null) {

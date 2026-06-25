@@ -130,7 +130,7 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
                     })
                 }else {
                     showGameStatusDialog(true, {
-                        startActivity(Intent(this@PlayActivity, MainActivity::class.java))
+                        finish()
                     })
                 }
             }
