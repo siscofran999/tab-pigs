@@ -9,14 +9,11 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
 import com.sisco.tabpigs.databinding.ActivityPlayBinding
 import com.sisco.tabpigs.databinding.AlertNextLevelGameOverBinding
 import androidx.core.graphics.drawable.toDrawable
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
