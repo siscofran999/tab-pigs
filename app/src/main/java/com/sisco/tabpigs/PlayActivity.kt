@@ -9,11 +9,16 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
 import com.sisco.tabpigs.databinding.ActivityPlayBinding
 import com.sisco.tabpigs.databinding.AlertNextLevelGameOverBinding
 import androidx.core.graphics.drawable.toDrawable
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class PlayActivity : BaseActivity<ActivityPlayBinding>() {
 
@@ -23,12 +28,13 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
     private var moleRunnable: Runnable? = null
     private var tempRandomIndex = 0
     private var gameTimer: CountDownTimer? = null
-    private val totalTime = 30000L
+    private val totalTime = 15000L
     private var mLevel: Int = 1
-    private var mTargetPoint = 30
+    private var mTargetPoint = 15
     private var isGameRunning = false
     private var soundPool: SoundPool? = null
     private var sfxClick = 0
+    private var gamePreferences: GamePreferences? = null
 
     override fun getViewBinding(): ActivityPlayBinding {
         return ActivityPlayBinding.inflate(layoutInflater)
@@ -36,17 +42,32 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
 
     override fun initData(savedInstanceState: Bundle?) {
         val initData = (1..9).map { PlayModel(it, false) }
-        mLevel = intent.getIntExtra(INTENT_LEVEL, 1)
-        binding.tvLevel.text = getString(R.string.value_level, mLevel.toString())
+        gamePreferences = GamePreferences(this)
+
         binding.tvPoint.text = tempPoint.toString()
         binding.rvPlay.adapter = adapter
-        binding.rvPlay.layoutManager = GridLayoutManager(this, 3)
+        binding.rvPlay.layoutManager = object :GridLayoutManager(this, 3) {
+            override fun canScrollHorizontally(): Boolean {
+                return false
+            }
+
+            override fun canScrollVertically(): Boolean {
+                return false
+            }
+        }
         adapter.submitList(initData)
         isGameRunning = true
 
         setUpAudio()
-        startTimer()
-        startMoleGame()
+
+        lifecycleScope.launch {
+            if (gamePreferences?.hasSavedGame() == true) {
+                mLevel = gamePreferences?.getLastLevel() ?: 1
+            }
+            binding.tvLevel.text = getString(R.string.value_level, mLevel.toString())
+            startTimer()
+            startMoleGame()
+        }
     }
 
     private fun setUpAudio() {
@@ -72,9 +93,9 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
                     model.copy(isShowPig = false)
                 }.toMutableList()
 
-                var randomIndex = (0 until updatedList.size).random()
+                var randomIndex = updatedList.indices.random()
                 while (randomIndex == tempRandomIndex) {
-                    randomIndex = (0 until updatedList.size).random()
+                    randomIndex = updatedList.indices.random()
                 }
                 tempRandomIndex = randomIndex
 
@@ -125,11 +146,18 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
                 mTargetPoint = mTargetPoint.plus(mLevel).plus(2)
                 if (tempPoint > mTargetPoint) {
                     showGameStatusDialog(false, {
-                        startActivity(newIntent(this@PlayActivity, mLevel.plus(1)))
+                        mLevel = mLevel.plus(1)
+                        startActivity(newIntent(this@PlayActivity))
+                        lifecycleScope.launch {
+                            gamePreferences?.saveProgress(mLevel, true)
+                        }
                         finish()
                     })
                 }else {
                     showGameStatusDialog(true, {
+                        lifecycleScope.launch {
+                            gamePreferences?.saveProgress(1, false)
+                        }
                         finish()
                     })
                 }
@@ -163,6 +191,15 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
         dialog.show()
     }
 
+    override fun onStop() {
+        super.onStop()
+        lifecycleScope.launch {
+            if (!isFinishing) {
+                gamePreferences?.saveProgress(mLevel, true)
+            }
+        }
+    }
+
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
         gameTimer?.cancel()
@@ -172,13 +209,8 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
     }
 
     companion object {
-        private const val INTENT_LEVEL = "LEVEL"
-        fun newIntent(
-            context: Context, level: Int = 1,
-        ): Intent {
-            return Intent(context, PlayActivity::class.java).apply {
-                putExtra(INTENT_LEVEL, level)
-            }
+        fun newIntent(context: Context): Intent {
+            return Intent(context, PlayActivity::class.java)
         }
     }
 }

@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.sisco.tabpigs.databinding.ItemPlayBinding
 
-class PlayAdapter(): ListAdapter<PlayModel, PlayAdapter.PlayViewHolder>(DIFF_UTIL) {
+class PlayAdapter: ListAdapter<PlayModel, PlayAdapter.PlayViewHolder>(DIFF_UTIL) {
 
     private var mListener: ItemClickListener? = null
 
