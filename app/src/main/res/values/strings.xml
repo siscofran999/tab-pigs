@@ -3,4 +3,5 @@
     <string name="value_level">LV. %s</string>
     <string name="point_you">Point yang kamu dapat:</string>
     <string name="next">Lanjut</string>
+    <string name="value_point">%s /</string>
 </resources>

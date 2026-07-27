@@ -14,18 +14,25 @@ class GamePreferences(private val context: Context) {
     private companion object {
         val LAST_LEVEL_KEY = intPreferencesKey("last_level")
         val HAS_SAVED_GAME_KEY = booleanPreferencesKey("has_saved_game")
+        val TARGET_POINT_KEY = intPreferencesKey("target_point")
     }
 
-    suspend fun saveProgress(level: Int, hasSaved: Boolean = true) {
+    suspend fun saveProgress(level: Int, targetPoint: Int, hasSaved: Boolean = true) {
         context.dataStore.edit { preferences ->
             preferences[LAST_LEVEL_KEY] = level
             preferences[HAS_SAVED_GAME_KEY] = hasSaved
+            preferences[TARGET_POINT_KEY] = targetPoint
         }
     }
 
     suspend fun getLastLevel(): Int {
         val preferences = context.dataStore.data.first()
-        return preferences[LAST_LEVEL_KEY] ?: 1 // Default level 1
+        return preferences[LAST_LEVEL_KEY] ?: 1
+    }
+
+    suspend fun getTargetPoint(): Int {
+        val preferences = context.dataStore.data.first()
+        return preferences[TARGET_POINT_KEY] ?: 20
     }
 
     suspend fun hasSavedGame(): Boolean {

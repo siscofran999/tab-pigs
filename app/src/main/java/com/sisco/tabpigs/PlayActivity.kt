@@ -15,6 +15,8 @@ import com.sisco.tabpigs.databinding.ActivityPlayBinding
 import com.sisco.tabpigs.databinding.AlertNextLevelGameOverBinding
 import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.lifecycleScope
+import com.sisco.tabpigs.Globals.INIT_LEVEL
+import com.sisco.tabpigs.Globals.INIT_TARGET_POINT
 import kotlinx.coroutines.launch
 
 class PlayActivity : BaseActivity<ActivityPlayBinding>() {
@@ -22,12 +24,36 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
     private var adapter: PlayAdapter = PlayAdapter()
     private var tempPoint = 0
     private val handler = Handler(Looper.getMainLooper())
-    private var moleRunnable: Runnable? = null
+    private var moleRunnable: Runnable = object : Runnable {
+        override fun run() {
+            if (!isGameRunning) return
+
+            val updatedList = adapter.currentList.map { model ->
+                model.copy(isShowPig = false)
+            }.toMutableList()
+
+            var randomIndex = updatedList.indices.random()
+            while (randomIndex == tempRandomIndex) {
+                randomIndex = updatedList.indices.random()
+            }
+            tempRandomIndex = randomIndex
+
+            if (updatedList.isNotEmpty()) {
+                val selectedItem = updatedList[tempRandomIndex]
+                updatedList[tempRandomIndex] = selectedItem.copy(isShowPig = true)
+            }
+
+            adapter.submitList(updatedList)
+
+            val delaySpeed = (3000 - (mLevel * 300)).coerceAtLeast(1000).toLong()
+            handler.postDelayed(this, delaySpeed)
+        }
+    }
     private var tempRandomIndex = 0
     private var gameTimer: CountDownTimer? = null
-    private val totalTime = 15000L
-    private var mLevel: Int = 1
-    private var mTargetPoint = 15
+    private val totalTime = 25000L
+    private var mLevel: Int = INIT_LEVEL
+    private var mTargetPoint = INIT_TARGET_POINT
     private var isGameRunning = false
     private var soundPool: SoundPool? = null
     private var sfxClick = 0
@@ -41,7 +67,7 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
         val initData = (1..9).map { PlayModel(it, false) }
         gamePreferences = GamePreferences(this)
 
-        binding.tvPoint.text = tempPoint.toString()
+        binding.tvPoint.text = getString(R.string.value_point, tempPoint.toString().padStart(2, '0'))
         binding.rvPlay.adapter = adapter
         binding.rvPlay.layoutManager = object :GridLayoutManager(this, 3) {
             override fun canScrollHorizontally(): Boolean {
@@ -59,9 +85,11 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
 
         lifecycleScope.launch {
             if (gamePreferences?.hasSavedGame() == true) {
-                mLevel = gamePreferences?.getLastLevel() ?: 1
+                mLevel = gamePreferences?.getLastLevel() ?: INIT_LEVEL
             }
+            mTargetPoint = gamePreferences?.getTargetPoint() ?: mTargetPoint
             binding.tvLevel.text = getString(R.string.value_level, mLevel.toString())
+            binding.tvTargetPoint.text = mTargetPoint.toString()
             startTimer()
             startMoleGame()
         }
@@ -83,32 +111,8 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
 
     private fun startMoleGame() {
         if (!isGameRunning) return
-        moleRunnable?.let { handler.removeCallbacks(it) }
-        moleRunnable = object : Runnable {
-            override fun run() {
-                val updatedList = adapter.currentList.map { model ->
-                    model.copy(isShowPig = false)
-                }.toMutableList()
-
-                var randomIndex = updatedList.indices.random()
-                while (randomIndex == tempRandomIndex) {
-                    randomIndex = updatedList.indices.random()
-                }
-                tempRandomIndex = randomIndex
-
-                if (updatedList.isNotEmpty()) {
-                    val selectedItem = updatedList[tempRandomIndex]
-                    updatedList[tempRandomIndex] = selectedItem.copy(isShowPig = true)
-                }
-
-                adapter.submitList(updatedList)
-
-                val delaySpeed = (3000 - (mLevel * 300)).coerceAtLeast(1000).toLong()
-                handler.postDelayed(this, delaySpeed)
-            }
-        }
-
-        handler.post(moleRunnable as Runnable)
+        handler.removeCallbacks(moleRunnable)
+        handler.post(moleRunnable)
     }
 
     override fun initListener() {
@@ -116,10 +120,12 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
             override fun onItemClick(item: PlayModel) {
                 if (!isGameRunning) return
                 if (item.isShowPig == true) {
+                    handler.removeCallbacks(moleRunnable)
                     soundPool?.play(sfxClick, 1.0f, 1.0f, 1, 0, 1.0f)
                     tempPoint += 1
-                    binding.tvPoint.text = tempPoint.toString()
-                    startMoleGame()
+                    binding.tvPoint.text = getString(R.string.value_point, tempPoint.toString().padStart(2, '0'))
+
+                    handler.post(moleRunnable)
                 }
             }
         })
@@ -137,26 +143,26 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
                 isGameRunning = false
                 binding.progressTime.progress = 100
 
-                moleRunnable?.let { handler.removeCallbacks(it) }
+                moleRunnable.let { handler.removeCallbacks(it) }
                 gameTimer?.cancel()
                 handler.removeCallbacksAndMessages(null)
-                mTargetPoint = mTargetPoint.plus(mLevel).plus(2)
                 if (tempPoint > mTargetPoint) {
-                    showGameStatusDialog(false, {
+                    showGameStatusDialog(false) {
                         mLevel = mLevel.plus(1)
+                        mTargetPoint = mTargetPoint.plus(mLevel).plus(2)
                         startActivity(newIntent(this@PlayActivity))
                         lifecycleScope.launch {
-                            gamePreferences?.saveProgress(mLevel, true)
+                            gamePreferences?.saveProgress(mLevel, mTargetPoint, true)
                         }
                         finish()
-                    })
+                    }
                 }else {
-                    showGameStatusDialog(true, {
+                    showGameStatusDialog(true) {
                         lifecycleScope.launch {
-                            gamePreferences?.saveProgress(1, false)
+                            gamePreferences?.saveProgress(INIT_LEVEL, INIT_TARGET_POINT, false)
                         }
                         finish()
-                    })
+                    }
                 }
             }
         }.start()
@@ -192,7 +198,7 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
         super.onStop()
         lifecycleScope.launch {
             if (!isFinishing) {
-                gamePreferences?.saveProgress(mLevel, true)
+                gamePreferences?.saveProgress(mLevel, mTargetPoint, true)
             }
         }
     }
