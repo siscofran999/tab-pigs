@@ -9,25 +9,15 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
 import com.sisco.tabpigs.databinding.ActivityPlayBinding
 import com.sisco.tabpigs.databinding.AlertNextLevelGameOverBinding
 import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.lifecycleScope
-import com.google.android.libraries.ads.mobile.sdk.MobileAds
-import com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback
-import com.google.android.libraries.ads.mobile.sdk.common.AdRequest
-import com.google.android.libraries.ads.mobile.sdk.common.FullScreenContentError
-import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
-import com.google.android.libraries.ads.mobile.sdk.initialization.InitializationConfig
 import com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAd
-import com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAdEventCallback
 import com.sisco.tabpigs.Globals.INIT_LEVEL
 import com.sisco.tabpigs.Globals.INIT_TARGET_POINT
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class PlayActivity : BaseActivity<ActivityPlayBinding>() {
@@ -110,66 +100,23 @@ class PlayActivity : BaseActivity<ActivityPlayBinding>() {
     }
 
     private fun initAds() {
-        val backgroundScope = CoroutineScope(Dispatchers.IO)
-        backgroundScope.launch {
-            // Initialize GMA Next-Gen SDK on a background thread.
-            MobileAds.initialize(
-                this@PlayActivity,
-                // Sample AdMob app ID: ca-app-pub-3940256099942544~3347511713
-                InitializationConfig.Builder(getString(R.string.ads_app_id)).build()
-            ) {
-                // Adapter initialization is complete.
-                Log.i(TAG, "initAds: complete masukk -> ")
-                InterstitialAd.load(
-                    AdRequest.Builder(getString(R.string.ads_unit_id)).build(),
-                    object : AdLoadCallback<InterstitialAd> {
-                        override fun onAdLoaded(ad: InterstitialAd) {
-                            // Called when an ad has loaded.
-                            Log.i(TAG, "onAdLoaded: masukk -> ")
-                            mInterstitialAd = ad
-                            ad.adEventCallback =
-                                object : InterstitialAdEventCallback {
-                                    override fun onAdDismissedFullScreenContent() {
-                                        Log.d(TAG, "Ad was dismissed. masukk -> ")
-                                        mInterstitialAd = null
-                                        lifecycleScope.launch {
-                                            gamePreferences?.saveProgress(INIT_LEVEL, INIT_TARGET_POINT, false)
-                                        }
-                                        finish()
-                                    }
-
-                                    override fun onAdFailedToShowFullScreenContent(fullScreenContentError: FullScreenContentError) {
-                                        Log.d(TAG, "Ad failed to show. masukk -> ")
-                                        // Don't forget to set the ad reference to null so you
-                                        // don't show the ad a second time.
-                                        mInterstitialAd = null
-                                    }
-
-                                    override fun onAdShowedFullScreenContent() {
-                                        Log.d(TAG, "Ad showed fullscreen content. masukk -> ")
-                                    }
-
-                                    override fun onAdImpression() {
-                                        Log.d(TAG, "Ad recorded an impression. masukk -> ")
-                                    }
-
-                                    override fun onAdClicked() {
-                                        Log.d(TAG, "Ad was clicked. masukk -> ")
-                                    }
-                                }
-                        }
-
-                        override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                            // Called when ad fails to load.
-                            Log.e(TAG, "onAdFailedToLoad: masukk -> ${loadAdError.responseInfo} $loadAdError")
-                            mInterstitialAd = null
-                        }
-                    }
-                )
+        loadInterstitialAd(
+            appId = getString(R.string.ads_app_id),
+            adUnitId = getString(R.string.ads_unit_id),
+            onAdLoaded = { ad ->
+                mInterstitialAd = ad
+            },
+            onAdFailed = {
+                mInterstitialAd = null
+            },
+            onAdDismissed = {
+                mInterstitialAd = null
+                lifecycleScope.launch {
+                    gamePreferences?.saveProgress(INIT_LEVEL, INIT_TARGET_POINT, false)
+                }
+                finish()
             }
-            // SDK initialization is complete. If you don't want to wait for bidding adapters to finish
-            // initializing, start loading ads now.
-        }
+        )
     }
 
     private fun setUpAudio() {
