@@ -12,7 +12,7 @@ abstract class BaseActivity<VB: ViewBinding>: AppCompatActivity() {
     protected abstract fun getViewBinding(): VB
     protected abstract fun initData(savedInstanceState: Bundle?)
     protected abstract fun initListener()
-    val TAG = packageName
+    protected val TAG: String = this.javaClass.simpleName
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
