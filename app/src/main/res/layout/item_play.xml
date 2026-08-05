@@ -21,6 +21,6 @@
         android:layout_marginHorizontal="20dp"
         android:layout_alignBottom="@id/imgMud"
         android:layout_marginBottom="15dp"
-        app:srcCompat="@drawable/pig" />
+        app:srcCompat="@drawable/ic_pig" />
 
 </RelativeLayout>
