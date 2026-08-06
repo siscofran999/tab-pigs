@@ -1,6 +1,7 @@
-package com.sisco.tabpigs.theme
+package com.sisco.tabpigs.ui.theme
 
 import android.app.Activity
+import android.graphics.Color
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -35,7 +36,7 @@ fun TabPigsTheme(
         SideEffect {
             val window = (view.context as Activity).window
             // Membuat status bar transparan agar background game terlihat penuh
-            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            window.statusBarColor = Color.TRANSPARENT
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
         }
     }

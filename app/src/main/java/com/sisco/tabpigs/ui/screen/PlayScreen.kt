@@ -1,4 +1,4 @@
-package com.sisco.tabpigs.view
+package com.sisco.tabpigs.ui.screen
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -6,9 +6,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -33,16 +33,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sisco.tabpigs.R
+import com.sisco.tabpigs.findActivity
+import com.sisco.tabpigs.ui.components.GameStatusDialog
+import com.sisco.tabpigs.utils.SoundManager
+import com.sisco.tabpigs.utils.rememberInterstitialAd
+import com.sisco.tabpigs.utils.rememberSoundManager
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -52,7 +60,7 @@ fun PlayScreen(
 ) {
     var score by remember { mutableIntStateOf(0) }
     var level by remember { mutableIntStateOf(1) }
-    var targetScore by remember { mutableIntStateOf(30) }
+    var targetScore by remember { mutableIntStateOf(20) }
 
     var isGameRunning by remember { mutableStateOf(true) }
     var activeMoleIndex by remember { mutableIntStateOf(-1) }
@@ -61,7 +69,13 @@ fun PlayScreen(
     var showDialog by remember { mutableStateOf(false) }
     var isGameOver by remember { mutableStateOf(false) }
 
-    // --- GAME LOGIC: Timer (Pengganti CountDownTimer) ---
+    val soundManager: SoundManager = rememberSoundManager()
+    val adManager = rememberInterstitialAd()
+
+    val context = LocalContext.current
+    val activity = context.findActivity()
+
+    // --- Timer ---
     LaunchedEffect(isGameRunning) {
         if (isGameRunning) {
             val totalTime = 25000L
@@ -74,23 +88,20 @@ fun PlayScreen(
                 timeLeftProgress = timeElapsed.toFloat() / totalTime.toFloat()
             }
 
-            // Waktu Habis
+            // timeout
             isGameRunning = false
-            isGameOver = score < targetScore // Jika poin kurang dari target, maka Game Over
+            isGameOver = score < targetScore
             showDialog = true
         }
     }
 
-    // --- GAME LOGIC: Pemunculan Babi (Pengganti Handler & Runnable) ---
-    // Efek ini akan di-restart otomatis setiap kali 'score' bertambah atau game berjalan
+    // --- Random Logic ---
     LaunchedEffect(isGameRunning, score) {
         if (isGameRunning) {
             while (true) {
-                // Pilih lubang acak yang berbeda dari sebelumnya
                 val nextIndex = (0..8).filter { it != activeMoleIndex }.random()
                 activeMoleIndex = nextIndex
 
-                // Kalkulasi kecepatan (Semakin tinggi level, semakin cepat)
                 val delaySpeed = (3000L - (level * 300L)).coerceAtLeast(1000L)
                 delay(delaySpeed.milliseconds)
             }
@@ -98,7 +109,14 @@ fun PlayScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Background
+
+        val bgGradientLv = Brush.verticalGradient(
+            colors = listOf(
+                colorResource(id = R.color.color_a05a2c),
+                colorResource(id = R.color.color_783e19)
+            )
+        )
+
         Image(
             painter = painterResource(id = R.drawable.bg_whack_mole),
             contentDescription = null,
@@ -107,7 +125,7 @@ fun PlayScreen(
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(modifier = Modifier.height(40.dp)) // Jarak pengganti Appbar
+            Spacer(modifier = Modifier.height(86.dp)) // Jarak pengganti Appbar
 
             // Baris Status: Skor, Level, Timer
             Row(
@@ -149,12 +167,13 @@ fun PlayScreen(
 
                 // Komponen Level
                 Text(
-                    text = "Level $level",
+                    text = stringResource(id = R.string.value_level, level),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = colorResource(id = R.color.yellow), // Sesuaikan dengan warnamu
                     modifier = Modifier
-                        .background(Color.DarkGray, shape = RoundedCornerShape(8.dp))
+                        .background(brush = bgGradientLv, shape = RoundedCornerShape(8.dp))
+                        .border(width = 3.dp, color = colorResource(id = R.color.color_4a2306), shape = RoundedCornerShape(8.dp))
                         .padding(horizontal = 14.dp, vertical = 4.dp)
                 )
 
@@ -171,61 +190,59 @@ fun PlayScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f)) // Mendorong Grid ke bawah
-
-            // Grid Play Area (Pengganti RecyclerView)
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3), // 3 Kolom
-                contentPadding = PaddingValues(16.dp),
-                modifier = Modifier.padding(bottom = 32.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                items(9) { index ->
-                    val isShowingPig = (index == activeMoleIndex) && isGameRunning
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3), // 3 Kolom
+                    modifier = Modifier.padding(bottom = 32.dp),
+                ) {
+                    items(9) { index ->
+                        val isShowingPig = (index == activeMoleIndex) && isGameRunning
 
-                    // 1. Setup Animasi Naik Turun (Translation Y)
-                    val pigTranslationY by animateFloatAsState(
-                        targetValue = if (isShowingPig) 0f else 150f,
-                        animationSpec = tween(durationMillis = 200), // setDuration(200)
-                        label = "PigYAnimation"
-                    )
-
-                    // 2. Setup Animasi Transparansi (Alpha)
-                    val pigAlpha by animateFloatAsState(
-                        targetValue = if (isShowingPig) 1f else 0f,
-                        animationSpec = tween(durationMillis = 200),
-                        label = "PigAlphaAnimation"
-                    )
-
-                    // Box sebagai pengganti layout item_play.xml
-                    Box(
-                        modifier = Modifier
-                            .aspectRatio(1f)
-                            .padding(8.dp)
-                            .clickable(enabled = isShowingPig) {
-                                // Logika klik babi
-                                score += 1
-                                activeMoleIndex = -1
-                                // Catatan: SoundPool bisa dipanggil di sini
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Tampilkan lubang kosong
-                        Image(
-                            painter = painterResource(id = R.drawable.img_mud_new), // Ganti aset lubangmu
-                            contentDescription = null
+                        // 1. Setup Animasi Naik Turun (Translation Y)
+                        val pigTranslationY by animateFloatAsState(
+                            targetValue = if (isShowingPig) 0f else 150f,
+                            animationSpec = tween(durationMillis = 200), // setDuration(200)
+                            label = "PigYAnimation"
                         )
 
-                        // Tampilkan babi jika indeksnya cocok
-                        if (isShowingPig) {
+                        // 2. Setup Animasi Transparansi (Alpha)
+                        val pigAlpha by animateFloatAsState(
+                            targetValue = if (isShowingPig) 1f else 0f,
+                            animationSpec = tween(durationMillis = 200),
+                            label = "PigAlphaAnimation"
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .padding(8.dp)
+                                .clickable(enabled = isShowingPig,
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() }) {
+                                    score += 1
+                                    soundManager.playClick()
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
                             Image(
-                                painter = painterResource(id = R.drawable.ic_pig), // Ganti aset babimu
-                                contentDescription = "Pig",
-                                modifier = Modifier.graphicsLayer {
-                                    // Menerapkan animasi ke gambar babi ini
-                                    translationY = pigTranslationY
-                                    alpha = pigAlpha
-                                }
+                                painter = painterResource(id = R.drawable.img_mud_new),
+                                contentDescription = null
                             )
+
+                            if (isShowingPig) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_pig),
+                                    contentDescription = "Pig",
+                                    modifier = Modifier.graphicsLayer {
+                                        translationY = pigTranslationY
+                                        alpha = pigAlpha
+                                    }.padding(bottom = 8.dp, start = 4.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -240,10 +257,17 @@ fun PlayScreen(
             onActionClick = {
                 showDialog = false
                 if (isGameOver) {
-                    // Panggil Interstitial Ads di sini, lalu kembali ke menu
-                    onNavigateBack()
+                    if (activity != null) {
+                        adManager.showAd(activity) {
+                            activity.runOnUiThread {
+                                onNavigateBack()
+                            }
+                        }
+                    }else {
+                        onNavigateBack()
+                    }
                 } else {
-                    // Lanjut Level
+                    // next level
                     level += 1
                     targetScore += level + 2
                     score = 0

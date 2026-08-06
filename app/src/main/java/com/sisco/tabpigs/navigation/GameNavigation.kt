@@ -1,4 +1,4 @@
-package com.sisco.tabpigs.view
+package com.sisco.tabpigs.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
@@ -6,6 +6,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.sisco.tabpigs.Globals.NAV_MAIN_MENU
 import com.sisco.tabpigs.Globals.NAV_PLAY_SCREEN
+import com.sisco.tabpigs.ui.screen.MainMenuScreen
+import com.sisco.tabpigs.ui.screen.PlayScreen
 
 @Composable
 fun GameNavigation() {

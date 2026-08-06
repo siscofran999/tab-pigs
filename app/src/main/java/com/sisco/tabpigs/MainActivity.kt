@@ -1,13 +1,11 @@
 package com.sisco.tabpigs
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.sisco.tabpigs.theme.TabPigsTheme
-import com.sisco.tabpigs.view.GameNavigation
-import com.sisco.tabpigs.view.MainMenuScreen
+import com.sisco.tabpigs.ui.theme.TabPigsTheme
+import com.sisco.tabpigs.navigation.GameNavigation
 
 class MainActivity : ComponentActivity() {
 
@@ -16,7 +14,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            // Panggil desain yang sudah kita buat
             TabPigsTheme {
                 GameNavigation()
             }
