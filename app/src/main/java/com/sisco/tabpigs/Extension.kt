@@ -1,6 +1,8 @@
 package com.sisco.tabpigs
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.os.SystemClock
 import android.util.Log
 import android.view.View
@@ -76,4 +78,10 @@ inline fun Activity.loadInterstitialAd(
             )
         }
     }
+}
+
+fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
