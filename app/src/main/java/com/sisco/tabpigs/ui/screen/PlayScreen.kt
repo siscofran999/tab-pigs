@@ -45,8 +45,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sisco.tabpigs.utils.Globals.INIT_LEVEL
+import com.sisco.tabpigs.utils.Globals.INIT_TARGET_POINT
 import com.sisco.tabpigs.R
-import com.sisco.tabpigs.findActivity
+import com.sisco.tabpigs.utils.findActivity
 import com.sisco.tabpigs.ui.components.GameStatusDialog
 import com.sisco.tabpigs.utils.ItemType
 import com.sisco.tabpigs.utils.SoundManager
@@ -61,8 +63,8 @@ fun PlayScreen(
 ) {
     var activeItemType by remember { mutableStateOf(ItemType.NORMAL) }
     var score by remember { mutableIntStateOf(0) }
-    var level by remember { mutableIntStateOf(1) }
-    var targetScore by remember { mutableIntStateOf(20) }
+    var level by remember { mutableIntStateOf(INIT_LEVEL) }
+    var targetScore by remember { mutableIntStateOf(INIT_TARGET_POINT) }
     var activeTargetScore by remember { mutableIntStateOf(0) }
 
     var isGameRunning by remember { mutableStateOf(true) }

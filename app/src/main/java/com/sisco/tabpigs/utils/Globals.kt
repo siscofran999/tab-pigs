@@ -1,4 +1,4 @@
-package com.sisco.tabpigs
+package com.sisco.tabpigs.utils
 
 object Globals {
     const val INIT_TARGET_POINT = 20
