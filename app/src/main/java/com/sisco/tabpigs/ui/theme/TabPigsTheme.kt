@@ -21,8 +21,6 @@ fun TabPigsTheme(
     val gameBlack = colorResource(id = R.color.black)
 
     val gameColorScheme = lightColorScheme(
-//        primary = colorResource(id = R.color.green_bg), // Sesuaikan dengan warna di colors.xml
-//        secondary = colorResource(id = R.color.secondary),
         background = gameWhite,
         surface = gameWhite,
         onPrimary = gameWhite,
@@ -35,8 +33,6 @@ fun TabPigsTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            // Membuat status bar transparan agar background game terlihat penuh
-            window.statusBarColor = Color.TRANSPARENT
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
         }
     }
