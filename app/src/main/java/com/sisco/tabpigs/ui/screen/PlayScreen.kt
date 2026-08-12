@@ -45,9 +45,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sisco.tabpigs.utils.Globals.INIT_LEVEL
+import com.sisco.tabpigs.utils.Globals.INIT_TARGET_POINT
 import com.sisco.tabpigs.R
-import com.sisco.tabpigs.findActivity
+import com.sisco.tabpigs.utils.findActivity
 import com.sisco.tabpigs.ui.components.GameStatusDialog
+import com.sisco.tabpigs.utils.ItemType
 import com.sisco.tabpigs.utils.SoundManager
 import com.sisco.tabpigs.utils.rememberInterstitialAd
 import com.sisco.tabpigs.utils.rememberSoundManager
@@ -58,9 +61,11 @@ import kotlin.time.Duration.Companion.milliseconds
 fun PlayScreen(
     onNavigateBack: () -> Unit
 ) {
+    var activeItemType by remember { mutableStateOf(ItemType.NORMAL) }
     var score by remember { mutableIntStateOf(0) }
-    var level by remember { mutableIntStateOf(1) }
-    var targetScore by remember { mutableIntStateOf(20) }
+    var level by remember { mutableIntStateOf(INIT_LEVEL) }
+    var targetScore by remember { mutableIntStateOf(INIT_TARGET_POINT) }
+    var activeTargetScore by remember { mutableIntStateOf(0) }
 
     var isGameRunning by remember { mutableStateOf(true) }
     var activeMoleIndex by remember { mutableIntStateOf(-1) }
@@ -90,7 +95,11 @@ fun PlayScreen(
 
             // timeout
             isGameRunning = false
-            isGameOver = score < targetScore
+            isGameOver = if (activeTargetScore != 0) {
+                score < activeTargetScore
+            }else {
+                score < targetScore
+            }
             showDialog = true
         }
     }
@@ -102,7 +111,19 @@ fun PlayScreen(
                 val nextIndex = (0..8).filter { it != activeMoleIndex }.random()
                 activeMoleIndex = nextIndex
 
-                val delaySpeed = (3000L - (level * 300L)).coerceAtLeast(1000L)
+                val chance = (1..100).random()
+                activeItemType = when {
+                    level >= 4 && chance <= 10 -> ItemType.GOLDEN
+                    level > 3 && chance in 11..20 -> ItemType.BOMB
+                    level == 3 && chance <= 20 -> ItemType.BOMB
+                    else -> ItemType.NORMAL
+                }
+
+                val delaySpeed = when(activeItemType) {
+                    ItemType.GOLDEN -> 1000L
+                    ItemType.BOMB -> 700L
+                    else -> (3000L - (level * 300L)).coerceAtLeast(1000L)
+                }
                 delay(delaySpeed.milliseconds)
             }
         }
@@ -154,8 +175,13 @@ fun PlayScreen(
                             color = Color.Black
                         )
                         Spacer(modifier = Modifier.width(2.dp))
+                        val tempTargetScore = if (activeTargetScore != 0) {
+                            activeTargetScore
+                        }else {
+                            targetScore
+                        }
                         Text(
-                            text = "$targetScore",
+                            text = "$tempTargetScore",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
@@ -223,8 +249,22 @@ fun PlayScreen(
                                 .clickable(enabled = isShowingPig,
                                     indication = null,
                                     interactionSource = remember { MutableInteractionSource() }) {
-                                    score += 1
-                                    soundManager.playClick()
+
+                                    if (isShowingPig && isGameRunning) {
+                                        when (activeItemType) {
+                                            ItemType.NORMAL -> {
+                                                score += 1
+                                                soundManager.playClick()
+                                            }
+                                            ItemType.BOMB -> {
+                                                score = (score - 1).coerceAtLeast(0)
+                                            }
+                                            ItemType.GOLDEN -> {
+                                                score += 1
+                                                activeTargetScore = targetScore - 2
+                                            }
+                                        }
+                                    }
                                 },
                             contentAlignment = Alignment.Center
                         ) {
@@ -234,8 +274,13 @@ fun PlayScreen(
                             )
 
                             if (isShowingPig) {
+                                val itemImage = when (activeItemType) {
+                                    ItemType.BOMB -> R.drawable.ic_bomb
+                                    ItemType.GOLDEN -> R.drawable.ic_golden_pig
+                                    ItemType.NORMAL -> R.drawable.ic_pig
+                                }
                                 Image(
-                                    painter = painterResource(id = R.drawable.ic_pig),
+                                    painter = painterResource(id = itemImage),
                                     contentDescription = "Pig",
                                     modifier = Modifier.graphicsLayer {
                                         translationY = pigTranslationY
@@ -270,6 +315,7 @@ fun PlayScreen(
                     // next level
                     level += 1
                     targetScore += level + 2
+                    activeTargetScore = 0
                     score = 0
                     timeLeftProgress = 0f
                     isGameRunning = true // Restart game

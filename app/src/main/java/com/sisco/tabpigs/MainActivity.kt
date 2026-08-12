@@ -19,18 +19,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-//    override fun getViewBinding(): ActivityMainBinding {
-//        return ActivityMainBinding.inflate(layoutInflater)
-//    }
-//
-//    override fun initData(savedInstanceState: Bundle?) {
-//
-//    }
-//
-//    override fun initListener() {
-//        binding.btnPlay.setOnClickListener {
-//            startActivity(newIntent(this))
-//        }
-//    }
 }

@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.sisco.tabpigs.R
 
 @Composable
-fun MainMenuScreen(onPlayClick: () -> Unit) {
+fun MainMenuScreen(onPlayClick: () -> Unit, isMuted: Boolean, onMuteToggle: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
 
         Image(
@@ -31,6 +31,24 @@ fun MainMenuScreen(onPlayClick: () -> Unit) {
             contentDescription = "Background",
             contentScale = ContentScale.Crop, // Membuat gambar memenuhi layar penuh
             modifier = Modifier.fillMaxSize()
+        )
+
+        val img = if (isMuted) {
+            R.drawable.ic_mute
+        }else {
+            R.drawable.ic_unmute
+        }
+        Image(
+            painter = painterResource(id = img),
+            contentDescription = "volume",
+            modifier = Modifier.align(Alignment.TopEnd)
+                .padding(top = 36.dp, end = 24.dp)
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ){
+                    onMuteToggle.invoke()
+                }
         )
 
         // 2. Susunan Vertikal Konten
@@ -91,5 +109,5 @@ fun MainMenuScreen(onPlayClick: () -> Unit) {
 @Preview(showSystemUi = true)
 @Composable
 fun MainMenuScreenPreview() {
-    MainMenuScreen(onPlayClick = {})
+    MainMenuScreen(onPlayClick = {}, isMuted = true, onMuteToggle = {})
 }

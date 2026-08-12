@@ -1,34 +1,45 @@
 package com.sisco.tabpigs.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.sisco.tabpigs.Globals.NAV_MAIN_MENU
-import com.sisco.tabpigs.Globals.NAV_PLAY_SCREEN
+import com.sisco.tabpigs.utils.Globals.NAV_MAIN_MENU
+import com.sisco.tabpigs.utils.Globals.NAV_PLAY_SCREEN
 import com.sisco.tabpigs.ui.screen.MainMenuScreen
 import com.sisco.tabpigs.ui.screen.PlayScreen
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.sisco.tabpigs.utils.BackgroundMusicManager
 
 @Composable
 fun GameNavigation() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = NAV_MAIN_MENU) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val isGameRunning = currentRoute == NAV_PLAY_SCREEN
+    var isMuted by remember { mutableStateOf(false) }
+    BackgroundMusicManager(isGameRunning, isMuted)
 
-        // Rute 1: Halaman Menu Utama
+    NavHost(navController = navController, startDestination = NAV_MAIN_MENU) {
         composable(NAV_MAIN_MENU) {
             MainMenuScreen(
                 onPlayClick = {
-                    // Berpindah ke halaman play saat tombol ditekan
                     navController.navigate("play_screen")
+                },
+                isMuted = isMuted,
+                onMuteToggle = {
+                    isMuted = !isMuted
                 }
             )
         }
 
-        // Rute 2: Halaman Play / Game Berlangsung
         composable(NAV_PLAY_SCREEN) {
             PlayScreen(
                 onNavigateBack = {
-                    // Kembali ke menu utama (misal saat game over)
                     navController.popBackStack("main_menu", inclusive = false)
                 }
             )

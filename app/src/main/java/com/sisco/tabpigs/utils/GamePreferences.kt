@@ -1,4 +1,4 @@
-package com.sisco.tabpigs
+package com.sisco.tabpigs.utils
 
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
