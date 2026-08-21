@@ -18,11 +18,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,12 +34,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sisco.tabpigs.R
 import com.sisco.tabpigs.ui.screen.SaveScreen
+import com.sisco.tabpigs.utils.GameSaveRepository
 import com.sisco.tabpigs.utils.SaveSlotData
 import com.sisco.tabpigs.utils.dashedBorder
+import kotlinx.coroutines.launch
 
 @Composable
-fun SaveItem(slot: SaveSlotData) {
-    // Warna-warna yang diambil dari desainmu
+fun SaveItem(slot: SaveSlotData, onPlayClick: (SaveSlotData) -> Unit) {
+
+    val context = LocalContext.current
+    val saveGameRepo = remember { GameSaveRepository(context) }
+    val coroutineScope = rememberCoroutineScope()
+
     val filledBgColor = Brush.verticalGradient(
         colors = listOf(
             colorResource(id = R.color.color_c78748),
@@ -86,7 +95,10 @@ fun SaveItem(slot: SaveSlotData) {
         ) {
             if (slot.isEmpty) {
                 // TAMPILAN KOSONG
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable {
+                        onPlayClick(slot)
+                    }) {
                     Text(
                         text = "+",
                         fontSize = 28.sp,
@@ -132,7 +144,7 @@ fun SaveItem(slot: SaveSlotData) {
                             .clip(RoundedCornerShape(10.dp)) // Memotong sudut agar efek klik (ripple) tidak keluar garis
                             .background(color = colorResource(id = R.color.color_4ade80))
                             .border(3.dp, colorResource(id = R.color.color_166534), RoundedCornerShape(10.dp))
-                            .clickable { /* Aksi Load Game */ },
+                            .clickable { onPlayClick(slot) },
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -151,7 +163,11 @@ fun SaveItem(slot: SaveSlotData) {
                             .clip(RoundedCornerShape(10.dp))
                             .background(color = colorResource(id = R.color.color_f87171))
                             .border(3.dp, colorResource(id = R.color.color_991b1b), RoundedCornerShape(10.dp))
-                            .clickable { /* Aksi Load Game */ },
+                            .clickable {
+                                coroutineScope.launch {
+                                    saveGameRepo.updateSlot(SaveSlotData(id = slot.id, level = 1, isEmpty = true))
+                                }
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -187,5 +203,5 @@ fun SaveItem(slot: SaveSlotData) {
 @Preview(showSystemUi = true)
 @Composable
 fun SaveItemPreview() {
-    SaveItem(SaveSlotData(id = 1, level = 1, isEmpty = false))
+    SaveItem(SaveSlotData(id = 1, level = 1, isEmpty = false), onPlayClick = {})
 }

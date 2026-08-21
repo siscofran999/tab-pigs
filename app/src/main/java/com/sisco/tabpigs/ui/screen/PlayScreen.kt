@@ -25,11 +25,13 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,16 +52,20 @@ import com.sisco.tabpigs.utils.Globals.INIT_TARGET_POINT
 import com.sisco.tabpigs.R
 import com.sisco.tabpigs.utils.findActivity
 import com.sisco.tabpigs.ui.components.GameStatusDialog
+import com.sisco.tabpigs.utils.GameSaveRepository
 import com.sisco.tabpigs.utils.ItemType
+import com.sisco.tabpigs.utils.SaveSlotData
 import com.sisco.tabpigs.utils.SoundManager
 import com.sisco.tabpigs.utils.rememberInterstitialAd
 import com.sisco.tabpigs.utils.rememberSoundManager
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun PlayScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    saveSlotId: Int = 1,
 ) {
     var activeItemType by remember { mutableStateOf(ItemType.NORMAL) }
     var score by remember { mutableIntStateOf(0) }
@@ -79,6 +85,15 @@ fun PlayScreen(
 
     val context = LocalContext.current
     val activity = context.findActivity()
+
+    val saveGameRepo = remember { GameSaveRepository(context) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val currentSlotData by saveGameRepo.getSlotById(saveSlotId).collectAsState(
+        initial = SaveSlotData(id = saveSlotId, level = 1, isEmpty = true)
+    )
+
+    level = currentSlotData.level
 
     // --- Timer ---
     LaunchedEffect(isGameRunning) {
@@ -312,6 +327,9 @@ fun PlayScreen(
                         onNavigateBack()
                     }
                 } else {
+                    coroutineScope.launch {
+                        saveGameRepo.updateSlot(SaveSlotData(id = saveSlotId, level = level, isEmpty = false))
+                    }
                     // next level
                     level += 1
                     targetScore += level + 2

@@ -3,6 +3,7 @@ package com.sisco.tabpigs.ui.screen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -28,17 +33,18 @@ import androidx.compose.ui.unit.sp
 import com.sisco.tabpigs.R
 import com.sisco.tabpigs.ui.components.OutlinedText
 import com.sisco.tabpigs.ui.components.SaveItem
+import com.sisco.tabpigs.utils.GameSaveRepository
 import com.sisco.tabpigs.utils.SaveSlotData
 
 @Composable
 fun SaveScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onPlayClick: (SaveSlotData) -> Unit
 ) {
-    val dummyDataStoreSlots = listOf(
-        SaveSlotData(id = 1, level = 1, isEmpty = false),
-        SaveSlotData(id = 2, isEmpty = true),
-        SaveSlotData(id = 3, isEmpty = true)
-    )
+
+    val context = LocalContext.current
+    val saveGameRepo = remember { GameSaveRepository(context) }
+    val slots by saveGameRepo.getSlots.collectAsState(initial = emptyList())
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -61,7 +67,10 @@ fun SaveScreen(
                             width = 4.dp,
                             color = colorResource(id = R.color.color_482307),
                             shape = CircleShape
-                        ), contentAlignment = Alignment.Center
+                        )
+                        .clickable {
+                            onNavigateBack()
+                        }, contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_back),
@@ -102,8 +111,10 @@ fun SaveScreen(
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                dummyDataStoreSlots.forEach { slot ->
-                    SaveItem(slot = slot)
+                slots.forEach { slot ->
+                    SaveItem(slot = slot, onPlayClick = { id ->
+                        onPlayClick(id)
+                    })
                 }
             }
         }
@@ -113,5 +124,5 @@ fun SaveScreen(
 @Preview(showSystemUi = true)
 @Composable
 fun MemoryScreenPreview() {
-    SaveScreen(onNavigateBack = {})
+    SaveScreen(onNavigateBack = {}, onPlayClick = {})
 }

@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -13,7 +14,10 @@ import com.sisco.tabpigs.utils.Globals.NAV_PLAY_SCREEN
 import com.sisco.tabpigs.ui.screen.MainMenuScreen
 import com.sisco.tabpigs.ui.screen.PlayScreen
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navArgument
+import com.sisco.tabpigs.ui.screen.SaveScreen
 import com.sisco.tabpigs.utils.BackgroundMusicManager
+import com.sisco.tabpigs.utils.Globals.NAV_SAVE_SCREEN
 
 @Composable
 fun GameNavigation() {
@@ -27,8 +31,11 @@ fun GameNavigation() {
     NavHost(navController = navController, startDestination = NAV_MAIN_MENU) {
         composable(NAV_MAIN_MENU) {
             MainMenuScreen(
-                onPlayClick = {
-                    navController.navigate("play_screen")
+                onPlayClick = { slotId ->
+                    navController.navigate("$NAV_PLAY_SCREEN/$slotId")
+                },
+                onNavigateToSaveScreen = {
+                    navController.navigate(NAV_SAVE_SCREEN)
                 },
                 isMuted = isMuted,
                 onMuteToggle = {
@@ -37,10 +44,27 @@ fun GameNavigation() {
             )
         }
 
-        composable(NAV_PLAY_SCREEN) {
+        composable(
+            route = "$NAV_PLAY_SCREEN/{slotId}",
+            arguments = listOf(
+                navArgument("slotId") { type= NavType.IntType }
+            )) { backStackEntry ->
+            val slotId = backStackEntry.arguments?.getInt("slotId") ?: 1
             PlayScreen(
                 onNavigateBack = {
-                    navController.popBackStack("main_menu", inclusive = false)
+                    navController.popBackStack(NAV_MAIN_MENU, inclusive = false)
+                },
+                saveSlotId = slotId
+            )
+        }
+
+        composable(NAV_SAVE_SCREEN) {
+            SaveScreen(
+                onNavigateBack = {
+                    navController.popBackStack(NAV_MAIN_MENU, inclusive = false)
+                },
+                onPlayClick = { slotId ->
+                    navController.navigate("$NAV_PLAY_SCREEN/$slotId")
                 }
             )
         }
