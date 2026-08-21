@@ -40,3 +40,9 @@ class GamePreferences(private val context: Context) {
         return preferences[HAS_SAVED_GAME_KEY] ?: false
     }
 }
+
+data class SaveSlotData(
+    val id: Int, // Untuk angka 1, 2, 3
+    val level: Int = 0,
+    val isEmpty: Boolean = true
+)

@@ -6,4 +6,6 @@
     <string name="point_you">Point yang kamu dapat:</string>
     <string name="next">Lanjut</string>
     <string name="value_point">%s /</string>
+    <string name="choose_slot">PILIH SLOT</string>
+    <string name="your_progress_game">Tentukan progress gamemu</string>
 </resources>
