@@ -90,10 +90,13 @@ fun PlayScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val currentSlotData by saveGameRepo.getSlotById(saveSlotId).collectAsState(
-        initial = SaveSlotData(id = saveSlotId, level = 1, isEmpty = true)
+        initial = SaveSlotData(id = saveSlotId, level = 1, isEmpty = true, targetScore = INIT_TARGET_POINT)
     )
 
-    level = currentSlotData.level
+    LaunchedEffect(currentSlotData.level) {
+        level = currentSlotData.level
+        targetScore = currentSlotData.targetScore
+    }
 
     // --- Timer ---
     LaunchedEffect(isGameRunning) {
@@ -175,7 +178,11 @@ fun PlayScreen(
                     modifier = Modifier
                         .size(90.dp, 30.dp)
                         .background(color = Color.White, shape = RoundedCornerShape(10.dp))
-                        .border(width = 3.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))) {
+                        .border(
+                            width = 3.dp,
+                            color = Color.Black,
+                            shape = RoundedCornerShape(10.dp)
+                        )) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.star), // Anggap ini R.drawable.star
@@ -214,7 +221,11 @@ fun PlayScreen(
                     color = colorResource(id = R.color.yellow), // Sesuaikan dengan warnamu
                     modifier = Modifier
                         .background(brush = bgGradientLv, shape = RoundedCornerShape(8.dp))
-                        .border(width = 3.dp, color = colorResource(id = R.color.color_4a2306), shape = RoundedCornerShape(8.dp))
+                        .border(
+                            width = 3.dp,
+                            color = colorResource(id = R.color.color_4a2306),
+                            shape = RoundedCornerShape(8.dp)
+                        )
                         .padding(horizontal = 14.dp, vertical = 4.dp)
                 )
 
@@ -261,7 +272,8 @@ fun PlayScreen(
                             modifier = Modifier
                                 .aspectRatio(1f)
                                 .padding(8.dp)
-                                .clickable(enabled = isShowingPig,
+                                .clickable(
+                                    enabled = isShowingPig,
                                     indication = null,
                                     interactionSource = remember { MutableInteractionSource() }) {
 
@@ -271,9 +283,11 @@ fun PlayScreen(
                                                 score += 1
                                                 soundManager.playClick()
                                             }
+
                                             ItemType.BOMB -> {
                                                 score = (score - 1).coerceAtLeast(0)
                                             }
+
                                             ItemType.GOLDEN -> {
                                                 score += 1
                                                 activeTargetScore = targetScore - 2
@@ -297,10 +311,12 @@ fun PlayScreen(
                                 Image(
                                     painter = painterResource(id = itemImage),
                                     contentDescription = "Pig",
-                                    modifier = Modifier.graphicsLayer {
-                                        translationY = pigTranslationY
-                                        alpha = pigAlpha
-                                    }.padding(bottom = 8.dp, start = 4.dp)
+                                    modifier = Modifier
+                                        .graphicsLayer {
+                                            translationY = pigTranslationY
+                                            alpha = pigAlpha
+                                        }
+                                        .padding(bottom = 8.dp, start = 4.dp)
                                 )
                             }
                         }
@@ -327,9 +343,6 @@ fun PlayScreen(
                         onNavigateBack()
                     }
                 } else {
-                    coroutineScope.launch {
-                        saveGameRepo.updateSlot(SaveSlotData(id = saveSlotId, level = level, isEmpty = false))
-                    }
                     // next level
                     level += 1
                     targetScore += level + 2
@@ -337,6 +350,9 @@ fun PlayScreen(
                     score = 0
                     timeLeftProgress = 0f
                     isGameRunning = true // Restart game
+                    coroutineScope.launch {
+                        saveGameRepo.updateSlot(SaveSlotData(id = saveSlotId, level = level, isEmpty = false, targetScore = targetScore))
+                    }
                 }
             }
         )

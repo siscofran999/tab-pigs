@@ -33,14 +33,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sisco.tabpigs.R
-import com.sisco.tabpigs.ui.screen.SaveScreen
 import com.sisco.tabpigs.utils.GameSaveRepository
 import com.sisco.tabpigs.utils.SaveSlotData
 import com.sisco.tabpigs.utils.dashedBorder
 import kotlinx.coroutines.launch
 
 @Composable
-fun SaveItem(slot: SaveSlotData, onPlayClick: (SaveSlotData) -> Unit) {
+fun SaveItem(slot: SaveSlotData, onPlayClick: (Int) -> Unit) {
 
     val context = LocalContext.current
     val saveGameRepo = remember { GameSaveRepository(context) }
@@ -88,7 +87,7 @@ fun SaveItem(slot: SaveSlotData, onPlayClick: (SaveSlotData) -> Unit) {
                 )
                 .clickable {
                     if (slot.isEmpty) {
-                        // Aksi saat slot kosong diklik (Create New Game)
+                        onPlayClick(slot.id)
                     }
                 },
             contentAlignment = Alignment.Center
@@ -97,7 +96,7 @@ fun SaveItem(slot: SaveSlotData, onPlayClick: (SaveSlotData) -> Unit) {
                 // TAMPILAN KOSONG
                 Column(horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable {
-                        onPlayClick(slot)
+                        onPlayClick(slot.id)
                     }) {
                     Text(
                         text = "+",
@@ -144,7 +143,7 @@ fun SaveItem(slot: SaveSlotData, onPlayClick: (SaveSlotData) -> Unit) {
                             .clip(RoundedCornerShape(10.dp)) // Memotong sudut agar efek klik (ripple) tidak keluar garis
                             .background(color = colorResource(id = R.color.color_4ade80))
                             .border(3.dp, colorResource(id = R.color.color_166534), RoundedCornerShape(10.dp))
-                            .clickable { onPlayClick(slot) },
+                            .clickable { onPlayClick(slot.id) },
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -203,5 +202,5 @@ fun SaveItem(slot: SaveSlotData, onPlayClick: (SaveSlotData) -> Unit) {
 @Preview(showSystemUi = true)
 @Composable
 fun SaveItemPreview() {
-    SaveItem(SaveSlotData(id = 1, level = 1, isEmpty = false), onPlayClick = {})
+    SaveItem(SaveSlotData(id = 1, level = 1, isEmpty = true), onPlayClick = {})
 }

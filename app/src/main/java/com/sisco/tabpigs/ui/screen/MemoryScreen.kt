@@ -34,12 +34,11 @@ import com.sisco.tabpigs.R
 import com.sisco.tabpigs.ui.components.OutlinedText
 import com.sisco.tabpigs.ui.components.SaveItem
 import com.sisco.tabpigs.utils.GameSaveRepository
-import com.sisco.tabpigs.utils.SaveSlotData
 
 @Composable
 fun SaveScreen(
     onNavigateBack: () -> Unit,
-    onPlayClick: (SaveSlotData) -> Unit
+    onPlayClick: (Int) -> Unit
 ) {
 
     val context = LocalContext.current

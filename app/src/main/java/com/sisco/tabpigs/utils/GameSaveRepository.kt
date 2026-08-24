@@ -14,6 +14,7 @@ class GameSaveRepository(private val context: Context) {
 
     private fun getEmptyKey(id: Int) = booleanPreferencesKey("slot_${id}_is_empty")
     private fun getLevelKey(id: Int) = intPreferencesKey("slot_${id}_level")
+    private fun getTargetScoreKey(id: Int) = intPreferencesKey("slot_${id}_target_score")
 
     val getSlots: Flow<List<SaveSlotData>> = context.dataStore.data.map { prefs ->
         val slots = mutableListOf<SaveSlotData>()
@@ -21,15 +22,16 @@ class GameSaveRepository(private val context: Context) {
         for (i in 1..3) {
             val isEmpty = prefs[getEmptyKey(i)] ?: true
             val level = prefs[getLevelKey(i)] ?: 1
+            val targetScore = prefs[getTargetScoreKey(i)] ?: Globals.INIT_TARGET_POINT
 
-            slots.add(SaveSlotData(id = i, level = level, isEmpty = isEmpty))
+            slots.add(SaveSlotData(id = i, level = level, isEmpty = isEmpty, targetScore = targetScore))
         }
         slots
     }
 
     fun getSlotById(id: Int): Flow<SaveSlotData> {
         return getSlots.map { slotList ->
-            slotList.firstOrNull { it.id == id } ?: SaveSlotData(id = id, level = 1, isEmpty = true)
+            slotList.firstOrNull { it.id == id } ?: SaveSlotData(id = id, level = 1, isEmpty = true, targetScore = Globals.INIT_TARGET_POINT)
         }
     }
 
@@ -37,12 +39,14 @@ class GameSaveRepository(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[getEmptyKey(newSlot.id)] = newSlot.isEmpty
             prefs[getLevelKey(newSlot.id)] = newSlot.level
+            prefs[getTargetScoreKey(newSlot.id)] = newSlot.targetScore
         }
     }
 }
 
 data class SaveSlotData(
     val id: Int,
-    val level: Int = 0,
-    val isEmpty: Boolean = true
+    val level: Int = 1,
+    val isEmpty: Boolean = true,
+    val targetScore: Int = Globals.INIT_TARGET_POINT
 )
