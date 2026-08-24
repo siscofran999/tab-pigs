@@ -15,7 +15,7 @@ Tab Pigs is an addictive farm-themed casual Android game. Inspired by the classi
 ## ✨ Key Features
 * **Dynamic Item Spawning:**
     * Normal Pig = +1 Point
-    * Golden Pig = +1 Point and reduces target score
+    * Golden Pig = +2 Point and reduces target score (-2)
     * Random Bomb = -1 Point
 * **Interactive Audio:** Features upbeat country background music and interactive sound effects.
 

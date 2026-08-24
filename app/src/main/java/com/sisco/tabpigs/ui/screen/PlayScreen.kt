@@ -289,7 +289,7 @@ fun PlayScreen(
                                             }
 
                                             ItemType.GOLDEN -> {
-                                                score += 1
+                                                score += 2
                                                 activeTargetScore = targetScore - 2
                                             }
                                         }
