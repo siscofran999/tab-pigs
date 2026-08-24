@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sisco.tabpigs.R
 import com.sisco.tabpigs.utils.GameSaveRepository
+import com.sisco.tabpigs.utils.Globals
 import com.sisco.tabpigs.utils.SaveSlotData
 import com.sisco.tabpigs.utils.dashedBorder
 import kotlinx.coroutines.launch
@@ -119,7 +120,6 @@ fun SaveItem(slot: SaveSlotData, onPlayClick: (Int) -> Unit) {
                         .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Ikon Babi (Silakan sesuaikan R.drawable-nya)
                     Image(
                         painter = painterResource(id = R.drawable.ic_pig),
                         contentDescription = "Pig Icon",
@@ -139,8 +139,8 @@ fun SaveItem(slot: SaveSlotData, onPlayClick: (Int) -> Unit) {
                     // Tombol Play
                     Box(
                         modifier = Modifier
-                            .size(48.dp) // Ukuran total tombol
-                            .clip(RoundedCornerShape(10.dp)) // Memotong sudut agar efek klik (ripple) tidak keluar garis
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(color = colorResource(id = R.color.color_4ade80))
                             .border(3.dp, colorResource(id = R.color.color_166534), RoundedCornerShape(10.dp))
                             .clickable { onPlayClick(slot.id) },
@@ -164,7 +164,7 @@ fun SaveItem(slot: SaveSlotData, onPlayClick: (Int) -> Unit) {
                             .border(3.dp, colorResource(id = R.color.color_991b1b), RoundedCornerShape(10.dp))
                             .clickable {
                                 coroutineScope.launch {
-                                    saveGameRepo.updateSlot(SaveSlotData(id = slot.id, level = 1, isEmpty = true))
+                                    saveGameRepo.updateSlot(SaveSlotData(id = slot.id, level = 1, isEmpty = true, targetScore = Globals.INIT_TARGET_POINT))
                                 }
                             },
                         contentAlignment = Alignment.Center
@@ -182,7 +182,7 @@ fun SaveItem(slot: SaveSlotData, onPlayClick: (Int) -> Unit) {
         // --- 2. BADGE ANGKA (Melayang di atas kotak) ---
         Box(
             modifier = Modifier
-                .align(Alignment.TopStart) // Tempel di kiri atas Box induk
+                .align(Alignment.TopStart)
                 .size(32.dp)
                 .clip(CircleShape)
                 .background(badgeBgColor)
