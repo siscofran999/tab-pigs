@@ -50,8 +50,10 @@ import androidx.compose.ui.unit.sp
 import com.sisco.tabpigs.utils.Globals.INIT_LEVEL
 import com.sisco.tabpigs.utils.Globals.INIT_TARGET_POINT
 import com.sisco.tabpigs.R
+import com.sisco.tabpigs.ui.components.FloatingBubbleText
 import com.sisco.tabpigs.utils.findActivity
 import com.sisco.tabpigs.ui.components.GameStatusDialog
+import com.sisco.tabpigs.utils.FloatingTextData
 import com.sisco.tabpigs.utils.GameSaveRepository
 import com.sisco.tabpigs.utils.ItemType
 import com.sisco.tabpigs.utils.SaveSlotData
@@ -71,7 +73,6 @@ fun PlayScreen(
     var score by remember { mutableIntStateOf(0) }
     var level by remember { mutableIntStateOf(INIT_LEVEL) }
     var targetScore by remember { mutableIntStateOf(INIT_TARGET_POINT) }
-    var activeTargetScore by remember { mutableIntStateOf(0) }
 
     var isGameRunning by remember { mutableStateOf(true) }
     var activeMoleIndex by remember { mutableIntStateOf(-1) }
@@ -93,6 +94,10 @@ fun PlayScreen(
         initial = SaveSlotData(id = saveSlotId, level = 1, isEmpty = true, targetScore = INIT_TARGET_POINT)
     )
 
+    var floatingText by remember { mutableStateOf(listOf<FloatingTextData>()) }
+
+    var safeSpawnsBomb by remember { mutableIntStateOf(0) }
+
     LaunchedEffect(currentSlotData.level) {
         level = currentSlotData.level
         targetScore = currentSlotData.targetScore
@@ -113,11 +118,7 @@ fun PlayScreen(
 
             // timeout
             isGameRunning = false
-            isGameOver = if (activeTargetScore != 0) {
-                score < activeTargetScore
-            }else {
-                score < targetScore
-            }
+            isGameOver = score < targetScore
             showDialog = true
         }
     }
@@ -132,14 +133,18 @@ fun PlayScreen(
                 val chance = (1..100).random()
                 activeItemType = when {
                     level >= 4 && chance <= 10 -> ItemType.GOLDEN
-                    level > 3 && chance in 11..20 -> ItemType.BOMB
-                    level == 3 && chance <= 20 -> ItemType.BOMB
+                    level >= 3 && chance in 11..20 && safeSpawnsBomb >= 2 -> ItemType.BOMB
                     else -> ItemType.NORMAL
                 }
 
+                if (activeItemType == ItemType.BOMB) {
+                    safeSpawnsBomb = 0
+                } else {
+                    safeSpawnsBomb += 1
+                }
+
                 val delaySpeed = when(activeItemType) {
-                    ItemType.GOLDEN -> 1000L
-                    ItemType.BOMB -> 700L
+                    ItemType.GOLDEN, ItemType.BOMB -> 1000L
                     else -> (3000L - (level * 300L)).coerceAtLeast(1000L)
                 }
                 delay(delaySpeed.milliseconds)
@@ -197,13 +202,8 @@ fun PlayScreen(
                             color = Color.Black
                         )
                         Spacer(modifier = Modifier.width(2.dp))
-                        val tempTargetScore = if (activeTargetScore != 0) {
-                            activeTargetScore
-                        }else {
-                            targetScore
-                        }
                         Text(
-                            text = "$tempTargetScore",
+                            text = "$targetScore",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
@@ -289,11 +289,12 @@ fun PlayScreen(
                                             }
 
                                             ItemType.GOLDEN -> {
-                                                score += 2
-                                                activeTargetScore = targetScore - 2
+                                                score += 4
                                             }
                                         }
                                     }
+                                    val newText = FloatingTextData(type = activeItemType, holeIndex = index)
+                                    floatingText = floatingText + newText
                                 },
                             contentAlignment = Alignment.Center
                         ) {
@@ -317,6 +318,16 @@ fun PlayScreen(
                                             alpha = pigAlpha
                                         }
                                         .padding(bottom = 8.dp, start = 4.dp)
+                                )
+                            }
+
+                            val textsForThisHole = floatingText.filter { it.holeIndex == index }
+                            textsForThisHole.forEach { floatingItem ->
+                                FloatingBubbleText(
+                                    itemType = floatingItem.type,
+                                    onAnimationFinished = {
+                                        floatingText = floatingText.filter { it.id != floatingItem.id }
+                                    }
                                 )
                             }
                         }
@@ -346,7 +357,6 @@ fun PlayScreen(
                     // next level
                     level += 1
                     targetScore += level + 2
-                    activeTargetScore = 0
                     score = 0
                     timeLeftProgress = 0f
                     isGameRunning = true // Restart game
