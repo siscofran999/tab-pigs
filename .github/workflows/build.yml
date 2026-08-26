@@ -17,7 +17,7 @@ jobs:
 
       # 2. Menyiapkan Java (Gunakan Java 17 yang menjadi standar Compose modern)
       - name: Setup Java JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '21'
