@@ -5,4 +5,5 @@ object Globals {
     const val INIT_LEVEL = 1
     const val NAV_MAIN_MENU = "main_menu"
     const val NAV_PLAY_SCREEN = "play_screen"
+    const val NAV_SAVE_SCREEN = "save_screen"
 }

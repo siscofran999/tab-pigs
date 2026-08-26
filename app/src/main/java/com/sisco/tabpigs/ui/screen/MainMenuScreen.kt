@@ -13,23 +13,38 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sisco.tabpigs.R
+import com.sisco.tabpigs.utils.GameSaveRepository
+import com.sisco.tabpigs.utils.SaveSlotData
 
 @Composable
-fun MainMenuScreen(onPlayClick: () -> Unit, isMuted: Boolean, onMuteToggle: () -> Unit) {
+fun MainMenuScreen(onPlayClick: (Int) -> Unit, onNavigateToSaveScreen: () -> Unit, isMuted: Boolean, onMuteToggle: () -> Unit) {
+
+    val context = LocalContext.current
+    val saveGameRepo = remember { GameSaveRepository(context) }
+    val initSlots = listOf(
+        SaveSlotData(id = 1, level = 0, isEmpty = true),
+        SaveSlotData(id = 2, level = 0, isEmpty = true),
+        SaveSlotData(id = 3, level = 0, isEmpty = true)
+    )
+    val slots by saveGameRepo.getSlots.collectAsState(initial = initSlots)
+
     Box(modifier = Modifier.fillMaxSize()) {
 
         Image(
             painter = painterResource(id = R.drawable.bg_whack_mole),
             contentDescription = "Background",
-            contentScale = ContentScale.Crop, // Membuat gambar memenuhi layar penuh
+            contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
 
@@ -86,7 +101,12 @@ fun MainMenuScreen(onPlayClick: () -> Unit, isMuted: Boolean, onMuteToggle: () -
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    onPlayClick() // Panggil aksi saat diklik
+                    val isAllEmpty = slots.all { it.isEmpty }
+                    if (isAllEmpty) {
+                        onPlayClick(1)
+                    }else {
+                        onNavigateToSaveScreen()
+                    }
                 }
             )
 
@@ -109,5 +129,5 @@ fun MainMenuScreen(onPlayClick: () -> Unit, isMuted: Boolean, onMuteToggle: () -
 @Preview(showSystemUi = true)
 @Composable
 fun MainMenuScreenPreview() {
-    MainMenuScreen(onPlayClick = {}, isMuted = true, onMuteToggle = {})
+    MainMenuScreen(onPlayClick = {}, onNavigateToSaveScreen = {}, isMuted = true, onMuteToggle = {})
 }

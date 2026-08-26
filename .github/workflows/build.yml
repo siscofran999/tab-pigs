@@ -1,0 +1,39 @@
+name: Build Android APK
+
+# Trigger: Script ini akan jalan setiap ada 'push' ke branch 'main'
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Mengambil kode dari repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Menyiapkan Java (Gunakan Java 17 yang menjadi standar Compose modern)
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+          cache: 'gradle' # Fitur ini bikin build selanjutnya jauh lebih cepat!
+
+      # 3. Memberikan izin eksekusi pada Gradle
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 4. Melakukan Build APK versi Debug
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      # 5. Mengunggah hasil APK agar bisa kamu download
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TabPigs-Debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk

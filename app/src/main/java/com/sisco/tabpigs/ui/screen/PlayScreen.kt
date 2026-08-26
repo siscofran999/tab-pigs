@@ -25,11 +25,13 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,24 +50,29 @@ import androidx.compose.ui.unit.sp
 import com.sisco.tabpigs.utils.Globals.INIT_LEVEL
 import com.sisco.tabpigs.utils.Globals.INIT_TARGET_POINT
 import com.sisco.tabpigs.R
+import com.sisco.tabpigs.ui.components.FloatingBubbleText
 import com.sisco.tabpigs.utils.findActivity
 import com.sisco.tabpigs.ui.components.GameStatusDialog
+import com.sisco.tabpigs.utils.FloatingTextData
+import com.sisco.tabpigs.utils.GameSaveRepository
 import com.sisco.tabpigs.utils.ItemType
+import com.sisco.tabpigs.utils.SaveSlotData
 import com.sisco.tabpigs.utils.SoundManager
 import com.sisco.tabpigs.utils.rememberInterstitialAd
 import com.sisco.tabpigs.utils.rememberSoundManager
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun PlayScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    saveSlotId: Int = 1,
 ) {
     var activeItemType by remember { mutableStateOf(ItemType.NORMAL) }
     var score by remember { mutableIntStateOf(0) }
     var level by remember { mutableIntStateOf(INIT_LEVEL) }
     var targetScore by remember { mutableIntStateOf(INIT_TARGET_POINT) }
-    var activeTargetScore by remember { mutableIntStateOf(0) }
 
     var isGameRunning by remember { mutableStateOf(true) }
     var activeMoleIndex by remember { mutableIntStateOf(-1) }
@@ -79,6 +86,22 @@ fun PlayScreen(
 
     val context = LocalContext.current
     val activity = context.findActivity()
+
+    val saveGameRepo = remember { GameSaveRepository(context) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val currentSlotData by saveGameRepo.getSlotById(saveSlotId).collectAsState(
+        initial = SaveSlotData(id = saveSlotId, level = 1, isEmpty = true, targetScore = INIT_TARGET_POINT)
+    )
+
+    var floatingText by remember { mutableStateOf(listOf<FloatingTextData>()) }
+
+    var safeSpawnsBomb by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(currentSlotData.level) {
+        level = currentSlotData.level
+        targetScore = currentSlotData.targetScore
+    }
 
     // --- Timer ---
     LaunchedEffect(isGameRunning) {
@@ -95,11 +118,7 @@ fun PlayScreen(
 
             // timeout
             isGameRunning = false
-            isGameOver = if (activeTargetScore != 0) {
-                score < activeTargetScore
-            }else {
-                score < targetScore
-            }
+            isGameOver = score < targetScore
             showDialog = true
         }
     }
@@ -114,14 +133,18 @@ fun PlayScreen(
                 val chance = (1..100).random()
                 activeItemType = when {
                     level >= 4 && chance <= 10 -> ItemType.GOLDEN
-                    level > 3 && chance in 11..20 -> ItemType.BOMB
-                    level == 3 && chance <= 20 -> ItemType.BOMB
+                    level >= 3 && chance in 11..20 && safeSpawnsBomb >= 2 -> ItemType.BOMB
                     else -> ItemType.NORMAL
                 }
 
+                if (activeItemType == ItemType.BOMB) {
+                    safeSpawnsBomb = 0
+                } else {
+                    safeSpawnsBomb += 1
+                }
+
                 val delaySpeed = when(activeItemType) {
-                    ItemType.GOLDEN -> 1000L
-                    ItemType.BOMB -> 700L
+                    ItemType.GOLDEN, ItemType.BOMB -> 1000L
                     else -> (3000L - (level * 300L)).coerceAtLeast(1000L)
                 }
                 delay(delaySpeed.milliseconds)
@@ -160,7 +183,11 @@ fun PlayScreen(
                     modifier = Modifier
                         .size(90.dp, 30.dp)
                         .background(color = Color.White, shape = RoundedCornerShape(10.dp))
-                        .border(width = 3.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))) {
+                        .border(
+                            width = 3.dp,
+                            color = Color.Black,
+                            shape = RoundedCornerShape(10.dp)
+                        )) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.star), // Anggap ini R.drawable.star
@@ -175,13 +202,8 @@ fun PlayScreen(
                             color = Color.Black
                         )
                         Spacer(modifier = Modifier.width(2.dp))
-                        val tempTargetScore = if (activeTargetScore != 0) {
-                            activeTargetScore
-                        }else {
-                            targetScore
-                        }
                         Text(
-                            text = "$tempTargetScore",
+                            text = "$targetScore",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
@@ -199,7 +221,11 @@ fun PlayScreen(
                     color = colorResource(id = R.color.yellow), // Sesuaikan dengan warnamu
                     modifier = Modifier
                         .background(brush = bgGradientLv, shape = RoundedCornerShape(8.dp))
-                        .border(width = 3.dp, color = colorResource(id = R.color.color_4a2306), shape = RoundedCornerShape(8.dp))
+                        .border(
+                            width = 3.dp,
+                            color = colorResource(id = R.color.color_4a2306),
+                            shape = RoundedCornerShape(8.dp)
+                        )
                         .padding(horizontal = 14.dp, vertical = 4.dp)
                 )
 
@@ -246,7 +272,8 @@ fun PlayScreen(
                             modifier = Modifier
                                 .aspectRatio(1f)
                                 .padding(8.dp)
-                                .clickable(enabled = isShowingPig,
+                                .clickable(
+                                    enabled = isShowingPig,
                                     indication = null,
                                     interactionSource = remember { MutableInteractionSource() }) {
 
@@ -256,15 +283,18 @@ fun PlayScreen(
                                                 score += 1
                                                 soundManager.playClick()
                                             }
+
                                             ItemType.BOMB -> {
                                                 score = (score - 1).coerceAtLeast(0)
                                             }
+
                                             ItemType.GOLDEN -> {
-                                                score += 1
-                                                activeTargetScore = targetScore - 2
+                                                score += 4
                                             }
                                         }
                                     }
+                                    val newText = FloatingTextData(type = activeItemType, holeIndex = index)
+                                    floatingText = floatingText + newText
                                 },
                             contentAlignment = Alignment.Center
                         ) {
@@ -282,10 +312,22 @@ fun PlayScreen(
                                 Image(
                                     painter = painterResource(id = itemImage),
                                     contentDescription = "Pig",
-                                    modifier = Modifier.graphicsLayer {
-                                        translationY = pigTranslationY
-                                        alpha = pigAlpha
-                                    }.padding(bottom = 8.dp, start = 4.dp)
+                                    modifier = Modifier
+                                        .graphicsLayer {
+                                            translationY = pigTranslationY
+                                            alpha = pigAlpha
+                                        }
+                                        .padding(bottom = 8.dp, start = 4.dp)
+                                )
+                            }
+
+                            val textsForThisHole = floatingText.filter { it.holeIndex == index }
+                            textsForThisHole.forEach { floatingItem ->
+                                FloatingBubbleText(
+                                    itemType = floatingItem.type,
+                                    onAnimationFinished = {
+                                        floatingText = floatingText.filter { it.id != floatingItem.id }
+                                    }
                                 )
                             }
                         }
@@ -315,10 +357,12 @@ fun PlayScreen(
                     // next level
                     level += 1
                     targetScore += level + 2
-                    activeTargetScore = 0
                     score = 0
                     timeLeftProgress = 0f
                     isGameRunning = true // Restart game
+                    coroutineScope.launch {
+                        saveGameRepo.updateSlot(SaveSlotData(id = saveSlotId, level = level, isEmpty = false, targetScore = targetScore))
+                    }
                 }
             }
         )
