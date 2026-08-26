@@ -29,10 +29,14 @@ android {
     signingConfigs {
         create("release") {
             // Ambil data dari local.properties
-            storeFile = file(localProperties.getProperty("RELEASE_STORE_FILE") ?: "")
-            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD") ?: ""
-            keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS") ?: ""
-            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD") ?: ""
+            val keystorePath = localProperties.getProperty("RELEASE_STORE_FILE") ?: System.getenv("RELEASE_STORE_FILE")
+
+            if (!keystorePath.isNullOrEmpty()) {
+                storeFile = file(keystorePath)
+                storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD") ?: System.getenv("RELEASE_STORE_PASSWORD")
+                keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS") ?: System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD") ?: System.getenv("RELEASE_KEY_PASSWORD")
+            }
         }
     }
 
