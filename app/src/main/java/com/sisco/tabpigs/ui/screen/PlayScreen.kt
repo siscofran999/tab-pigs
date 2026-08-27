@@ -144,7 +144,8 @@ fun PlayScreen(
                 }
 
                 val delaySpeed = when(activeItemType) {
-                    ItemType.GOLDEN, ItemType.BOMB -> 1000L
+                    ItemType.GOLDEN -> 1000L
+                    ItemType.BOMB -> 800L
                     else -> (3000L - (level * 300L)).coerceAtLeast(1000L)
                 }
                 delay(delaySpeed.milliseconds)
@@ -281,15 +282,17 @@ fun PlayScreen(
                                         when (activeItemType) {
                                             ItemType.NORMAL -> {
                                                 score += 1
-                                                soundManager.playClick()
+                                                soundManager.playClick(ItemType.NORMAL)
                                             }
 
                                             ItemType.BOMB -> {
                                                 score = (score - 1).coerceAtLeast(0)
+                                                soundManager.playClick(ItemType.BOMB)
                                             }
 
                                             ItemType.GOLDEN -> {
                                                 score += 4
+                                                soundManager.playClick(ItemType.GOLDEN)
                                             }
                                         }
                                     }
