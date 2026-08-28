@@ -31,8 +31,7 @@ jobs:
       - name: Decode Keystore
         env:
           ENCODED_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
-        run: |
-          echo $ENCODED_KEYSTORE | base64 --decode > keystore.jks
+        run: echo "$ENCODED_KEYSTORE" | base64 --decode > keystore.jks
 
       # 5. Lakukan build AAB dengan menyuntikkan variabel environment
       - name: Build Release AAB
