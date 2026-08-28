@@ -23,10 +23,17 @@ fun BackgroundMusicManager(isGameRunning: Boolean, isMuted: Boolean) {
     }
 
     LaunchedEffect(isGameRunning, isMuted) {
-        when {
-            isMuted -> mediaPlayer.setVolume(0.0f, 0.0f)
-            isGameRunning -> mediaPlayer.setVolume(0.2f, 0.2f)
-            else -> mediaPlayer.setVolume(0.5f,0.5f)
+        if (isMuted) {
+            if (mediaPlayer.isPlaying) {
+                mediaPlayer.pause()
+            }
+        } else {
+            val volume = if (isGameRunning) 0.1f else 0.3f
+            mediaPlayer.setVolume(volume, volume)
+
+            if (!mediaPlayer.isPlaying) {
+                mediaPlayer.start()
+            }
         }
     }
 

@@ -24,7 +24,7 @@ fun GameNavigation() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val isGameRunning = currentRoute == NAV_PLAY_SCREEN
+    val isGameRunning = currentRoute == "$NAV_PLAY_SCREEN/{slotId}"
     var isMuted by remember { mutableStateOf(false) }
     BackgroundMusicManager(isGameRunning, isMuted)
 

@@ -11,10 +11,11 @@ import com.sisco.tabpigs.R
 
 class SoundManager(
     private val soundPool: SoundPool?,
-    private val sfxClickId: Int
+    private val sfxClickId: Map<ItemType, Int>
 ) {
-    fun playClick() {
-        soundPool?.play(sfxClickId, 0.5f, 0.5f, 1, 0, 1.0f)
+    fun playClick(type: ItemType) {
+        val soundId = sfxClickId[type] ?: return
+        soundPool?.play(soundId, 0.8f, 0.8f, 1, 0, 1.0f)
     }
 }
 
@@ -24,7 +25,7 @@ fun rememberSoundManager(): SoundManager {
     val isPreview = LocalInspectionMode.current
 
     if (isPreview) {
-        return remember { SoundManager(soundPool = null, sfxClickId = 0) }
+        return remember { SoundManager(soundPool = null, sfxClickId = emptyMap()) }
     }
 
     val soundPool = remember {
@@ -33,13 +34,17 @@ fun rememberSoundManager(): SoundManager {
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
         SoundPool.Builder()
-            .setMaxStreams(3)
+            .setMaxStreams(5)
             .setAudioAttributes(audioAttributes)
             .build()
     }
 
     val sfxClickId = remember {
-        soundPool.load(context, R.raw.sfx_click, 1)
+        mapOf(
+            ItemType.NORMAL to soundPool.load(context, R.raw.sfx_click, 1),
+            ItemType.GOLDEN to soundPool.load(context, R.raw.sfx_golden, 1),
+            ItemType.BOMB to soundPool.load(context, R.raw.sfx_bomb, 1)
+        )
     }
 
     DisposableEffect(Unit) {
